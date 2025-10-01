@@ -1,0 +1,16 @@
+{
+  "name": "cassandra-connector",
+  "config": {
+    "connector.class": "com.datastax.oss.kafka.sink.CassandraSinkConnector",
+    "tasks.max": "1",
+    "topics": "air_quality.trial.nairobi, air_quality.trial.mombasa", 
+    "contactPoints": "cassandra",
+    "loadBalancing.localDc": "datacenter1",
+    "port": 9042,
+    "auth.provider": "None",
+    "ssl.provider": "None",
+
+    "topic.air_quality.trial.nairobi.air_quality.air_quality_readings.mapping": "mongo_id=value._id,time=value.time,carbon_monoxide=value.carbon_monoxide,nitrogen_dioxide=value.nitrogen_dioxide,ozone=value.ozone,pm10=value.pm10,pm2_5=value.pm2_5,sulphur_dioxide=value.sulphur_dioxide,uv_index=value.uv_index,city=value.city",
+    "topic.air_quality.trial.mombasa.air_quality.air_quality_readings.mapping": "mongo_id=value._id,time=value.time,carbon_monoxide=value.carbon_monoxide,nitrogen_dioxide=value.nitrogen_dioxide,ozone=value.ozone,pm10=value.pm10,pm2_5=value.pm2_5,sulphur_dioxide=value.sulphur_dioxide,uv_index=value.uv_index,city=value.city"
+  }
+}

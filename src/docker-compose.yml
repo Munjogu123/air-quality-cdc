@@ -7,8 +7,10 @@ services:
       - .env
     ports:
       - "27017:27017"
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--keyFile", "/etc/secrets/mongo-keyfile"]
     volumes:
       - mongo_data:/data/db
+      - ./mongodb-key/mongo-keyfile:/etc/secrets/mongo-keyfile
 
   mongo-express:
     image: mongo-express:1.0.2-20-alpine3.19
@@ -17,6 +19,117 @@ services:
       - 8081:8081
     env_file:
       - .env
+    depends_on:
+      - mongo
+
+  zookeeper:
+    image: debezium/zookeeper:2.7.3.Final
+    container_name: zookeeper
+    restart: always
+    environment:
+      SERVER_ID: 1
+      SERVER_COUNT: 1 
+      LOG_LEVEL: INFO 
+    ports:
+    - "2181:2181" 
+    - "2888:2888" 
+    - "3888:3888" 
+    volumes:
+    - zookeeper_data:/zookeeper/data
+    - zookeeper_txns:/zookeeper/txns
+    - zookeeper_logs:/zookeeper/logs
+    - zookeeper_conf:/zookeeper/conf
+
+  kafka:
+    image: debezium/kafka:2.7.3.Final
+    container_name: kafka
+    restart: always
+    depends_on:
+    - zookeeper
+    ports:
+    - "9092:9092"
+    environment:
+      BROKER_ID: 1 
+      ZOOKEEPER_CONNECT: zookeeper:2181
+      HOST_NAME: kafka
+      ADVERTISED_HOST_NAME: kafka
+      HEAP_OPTS: "-Xms512M -Xmx512M" 
+      LOG_LEVEL: INFO
+    volumes:
+    - kafka_data:/kafka/data 
+    - kafka_logs:/kafka/logs 
+    - kafka_config:/kafka/config
+
+  connect:
+    image: debezium/connect:2.7.3.Final
+    container_name: debezium
+    depends_on:
+    - kafka
+    ports:
+    - "8083:8083"
+    environment:
+      GROUP_ID: 1
+      CONFIG_STORAGE_TOPIC: connect_configs
+      OFFSET_STORAGE_TOPIC: connect_offsets
+      BOOTSTRAP_SERVERS: kafka:9092
+      HOST_NAME: "connect"
+      ADVERTISED_HOST_NAME: "connect"
+      ADVERTISED_PORT: "8083"
+      KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      OFFSET_FLUSH_INTERVAL_MS: "60000"
+      OFFSET_FLUSH_TIMEOUT_MS: "5000"
+      SHUTDOWN_TIMEOUT: "10000"
+      HEAP_OPTS: "-Xms512M -Xmx2G"
+      LOG_LEVEL: "INFO"
+      ENABLE_APICURIO_CONVERTERS: "false"
+      ENABLE_DEBEZIUM_SCRIPTING: "false"
+      KAFKA_CONNECT_PLUGINS_DIR: /kafka/connect,/kafka/connect/plugins
+    volumes:
+      - connect_data:/kafka/connect
+      - ./plugins:/kafka/connect/plugins
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    depends_on:
+      - kafka
+      - zookeeper
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      KAFKA_CLUSTERS_0_KAFKA_CONNECT_0_NAME: connect
+      KAFKA_CLUSTERS_0_KAFKA_CONNECT_0_ADDRESS: http://connect:8083
+
+  app:
+    build:
+      context: ..
+      dockerfile: src/Dockerfile
+    container_name: python-app
+    depends_on:
+      - mongo
+
+  cassandra:
+    image: cassandra:4.1
+    container_name: cassandra
+    ports:
+      - "9042:9042"
+    volumes:
+      - cassandra_data:/var/lib/cassandra
 
 volumes:
   mongo_data:
+  zookeeper_data:
+  zookeeper_txns:
+  zookeeper_logs:
+  zookeeper_conf:
+  kafka_data:
+  kafka_logs:
+  kafka_config:
+  connect_data:
+  cassandra_data:

@@ -1,0 +1,17 @@
+{
+  "name": "mongodb-connector", 
+  "config": {
+    "connector.class": "io.debezium.connector.mongodb.MongoDbConnector", 
+    "mongodb.connection.string": "mongodb://debezium:debezium123@mongo:27017/?replicaSet=rs0",
+    "mongodb.user": "debezium",
+    "mongodb.password": "debezium123",
+    "topic.prefix": "air_quality",
+    "capture.scope": "deployment",
+    "snapshot.mode": "initial",
+
+    "transforms": "unwrap",
+    "transforms.unwrap.type": "io.debezium.connector.mongodb.transforms.ExtractNewDocumentState",
+    "transforms.unwrap.delete.tombstone.handling.mode": "drop",
+    "transforms.unwrap.add.headers": "op"
+  }
+}
