@@ -7,7 +7,7 @@ from pymongo.errors import CollectionInvalid
 
 load_dotenv()
 
-URI = os.getenv("DB_URI")
+URI = os.getenv("ME_CONFIG_MONGODB_URL")
 
 
 def main():

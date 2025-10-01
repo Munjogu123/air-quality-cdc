@@ -19,3 +19,12 @@ src/.env
 
 # notebook
 src/*.ipynb
+
+# keyfile
+src/mongodb-key
+
+# replication configs
+src/mongodb
+
+# plugins
+src/plugins
